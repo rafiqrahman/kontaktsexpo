@@ -8,7 +8,11 @@
     "scheme": "mobile",
     "userInterfaceStyle": "automatic",
     "ios": {
-      "icon": "./assets/expo.icon"
+      "icon": "./assets/expo.icon",
+      "bundleIdentifier": "my.com.bpam.kontakts",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -21,7 +25,7 @@
       "permissions": [
         "android.permission.NFC"
       ],
-      "package": "com.anonymous.mobile"
+      "package": "my.com.bpam.kontakts"
     },
     "web": {
       "output": "static",
@@ -46,6 +50,13 @@
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
-    }
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "16f24815-fceb-471e-8b3b-08eb0e5d2aa6"
+      }
+    },
+    "owner": "rafiqrahman"
   }
 }
