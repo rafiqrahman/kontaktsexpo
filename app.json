@@ -8,7 +8,6 @@
     "scheme": "mobile",
     "userInterfaceStyle": "automatic",
     "ios": {
-      "icon": "./assets/expo.icon",
       "bundleIdentifier": "my.com.bpam.kontakts",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false

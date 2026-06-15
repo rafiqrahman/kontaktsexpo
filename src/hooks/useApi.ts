@@ -1,7 +1,7 @@
 import { useAuth } from "../store/authContext";
 
-const API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL || "http://localhost:3000";
-const BASE_URL = process.env.EXPO_PUBLIC_BASE_URL || "http://localhost:3000";
+const API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL || "http://localhost:3000/kontaktsapp";
+const BASE_URL = process.env.EXPO_PUBLIC_BASE_URL || "http://localhost:3000/kontaktsapp";
 
 export { API_BASE_URL, BASE_URL };
 

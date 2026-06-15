@@ -59,6 +59,17 @@ export default function TabLayout() {
       />
 
       <Tabs.Screen
+        name="saved"
+        options={{
+          title: "My Wallet",
+          tabBarLabel: "Wallet",
+          tabBarIcon: ({ color, size, focused }) => (
+            <Ionicons name={focused ? "wallet" : "wallet-outline"} size={size} color={color} />
+          ),
+        }}
+      />
+
+      <Tabs.Screen
         name="leads"
         options={{
           title: "Captured Leads",

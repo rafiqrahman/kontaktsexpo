@@ -12,9 +12,11 @@ import { CameraView, useCameraPermissions } from "expo-camera";
 import * as WebBrowser from "expo-web-browser";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
+import { useApi } from "../hooks/useApi";
 
 export default function ScannerScreen() {
   const router = useRouter();
+  const { get, post } = useApi();
   const [permission, requestPermission] = useCameraPermissions();
   const [scanned, setScanned] = useState(false);
 
@@ -32,13 +34,73 @@ export default function ScannerScreen() {
     // e.g., contains /c/slug
     if (data.includes("/c/")) {
       try {
+        const parts = data.split("/c/");
+        const slug = parts[parts.length - 1].split("?")[0].split("#")[0].toLowerCase().trim();
+        
+        // Fetch public card details
+        const res = await get(`/api/v1/public/cards/${slug}`);
+        
+        if (res.success && res.card) {
+          const card = res.card;
+          Alert.alert(
+            "Card Detected 🚀",
+            `${card.firstName} ${card.lastName}\n${card.title || "Representative"}${card.companyName ? ` at ${card.companyName}` : ""}`,
+            [
+              {
+                text: "Save to Wallet",
+                onPress: async () => {
+                  try {
+                    const saveRes = await post("/api/v1/saved-cards", { cardId: card.id });
+                    if (saveRes.success) {
+                      Alert.alert("Saved 🎉", `${card.firstName}'s contact card has been added to your Kontakts wallet!`, [
+                        { text: "OK", onPress: () => router.back() }
+                      ]);
+                    }
+                  } catch (err: any) {
+                    const errMsg = err.message || "";
+                    if (errMsg.includes("own card")) {
+                      Alert.alert("Info", "This is your own business card.");
+                    } else if (errMsg.includes("unique constraint") || errMsg.includes("already")) {
+                      Alert.alert("Info", "You have already saved this card in your wallet.");
+                    } else if (err.message?.includes("Session expired") || err.message?.includes("401") || err.message?.includes("Unauthorized")) {
+                      Alert.alert("Unauthorized", "Please log in to save cards.");
+                    } else {
+                      Alert.alert("Error", err.message || "Failed to save card to wallet.");
+                    }
+                    setScanned(false);
+                  }
+                }
+              },
+              {
+                text: "Open Profile",
+                onPress: () => openCardUrl(data)
+              },
+              {
+                text: "Cancel",
+                style: "cancel",
+                onPress: () => setScanned(false)
+              }
+            ]
+          );
+        } else {
+          Alert.alert(
+            "Card Detected 🚀",
+            "Connecting to digital business card profile...",
+            [
+              { text: "Open Profile", onPress: () => openCardUrl(data) },
+              { text: "Cancel", style: "cancel", onPress: () => setScanned(false) }
+            ]
+          );
+        }
+      } catch (err) {
         Alert.alert(
           "Card Detected 🚀",
           "Connecting to digital business card profile...",
-          [{ text: "Open Profile", onPress: () => openCardUrl(data) }]
+          [
+            { text: "Open Profile", onPress: () => openCardUrl(data) },
+            { text: "Cancel", style: "cancel", onPress: () => setScanned(false) }
+          ]
         );
-      } catch (err) {
-        setScanned(false);
       }
     } else {
       Alert.alert(
