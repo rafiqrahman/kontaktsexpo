@@ -15,7 +15,13 @@ export function useApi() {
     if (userToken) {
       headers.set("Authorization", `Bearer ${userToken}`);
     }
-    if (!headers.has("Content-Type") && !(options.body instanceof FormData)) {
+    const isFormData = !!(options.body && (
+      options.body instanceof FormData ||
+      typeof (options.body as any).append === "function" ||
+      options.body.constructor?.name === "FormData"
+    ));
+
+    if (!headers.has("Content-Type") && !isFormData) {
       headers.set("Content-Type", "application/json");
     }
 

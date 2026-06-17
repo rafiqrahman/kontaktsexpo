@@ -1,9 +1,11 @@
 import React from "react";
-import { Tabs } from "expo-router";
+import { Tabs, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-import { Platform } from "react-native";
+import { Platform, TouchableOpacity } from "react-native";
 
 export default function TabLayout() {
+  const router = useRouter();
+
   return (
     <Tabs
       screenOptions={{
@@ -54,6 +56,15 @@ export default function TabLayout() {
           tabBarLabel: "Cards",
           tabBarIcon: ({ color, size, focused }) => (
             <Ionicons name={focused ? "card" : "card-outline"} size={size} color={color} />
+          ),
+          headerRight: () => (
+            <TouchableOpacity 
+              onPress={() => router.push("/create-card" as any)}
+              style={{ marginRight: 16, padding: 4 }}
+              activeOpacity={0.7}
+            >
+              <Ionicons name="add" size={26} color="#09090b" />
+            </TouchableOpacity>
           ),
         }}
       />

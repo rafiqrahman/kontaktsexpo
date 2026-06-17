@@ -42,6 +42,8 @@ function RootLayoutNav() {
       <Stack.Screen name="(auth)" options={{ headerShown: false }} />
       <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
       <Stack.Screen name="scanner" options={{ presentation: "modal", animation: "slide_from_bottom" }} />
+      <Stack.Screen name="create-card" options={{ presentation: "modal", animation: "slide_from_bottom" }} />
+      <Stack.Screen name="edit-card/[id]" options={{ presentation: "modal", animation: "slide_from_bottom" }} />
       <Stack.Screen name="card/[id]" options={{ presentation: "card" }} />
     </Stack>
   );

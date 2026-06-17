@@ -44,7 +44,8 @@
       ],
       "expo-secure-store",
       "react-native-nfc-manager",
-      "expo-image"
+      "expo-image",
+      "./plugins/withNetworkSecurity"
     ],
     "experiments": {
       "typedRoutes": true,

@@ -10,7 +10,7 @@ import {
   Clipboard, 
   Alert 
 } from "react-native";
-import { useRouter } from "expo-router";
+import { useRouter, useNavigation } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useApi, BASE_URL } from "../../hooks/useApi";
 import { useTheme } from "../../hooks/use-theme";
@@ -32,6 +32,7 @@ interface CardItem {
 
 export default function CardsTab() {
   const router = useRouter();
+  const navigation = useNavigation();
   const { get } = useApi();
   const theme = useTheme();
 
@@ -41,7 +42,13 @@ export default function CardsTab() {
 
   useEffect(() => {
     fetchCards();
-  }, []);
+
+    const unsubscribe = navigation.addListener("focus", () => {
+      fetchCards();
+    });
+
+    return unsubscribe;
+  }, [navigation]);
 
   const fetchCards = async () => {
     try {
@@ -147,11 +154,11 @@ export default function CardsTab() {
 
             <TouchableOpacity 
               style={[styles.actionButton, { backgroundColor: theme.background, borderColor: theme.backgroundSelected }]} 
-              onPress={() => copyToClipboard(item.slug)}
+              onPress={() => router.push(`/edit-card/${item.id}` as any)}
               activeOpacity={0.7}
             >
-              <Ionicons name="copy-outline" size={16} color={theme.foreground} />
-              <Text style={[styles.actionText, { color: theme.foreground }]}>Copy Link</Text>
+              <Ionicons name="create-outline" size={16} color={theme.foreground} />
+              <Text style={[styles.actionText, { color: theme.foreground }]}>Edit</Text>
             </TouchableOpacity>
 
             <TouchableOpacity 
@@ -193,8 +200,18 @@ export default function CardsTab() {
             <Ionicons name="card-outline" size={48} color={theme.textSecondary} />
             <Text style={[styles.emptyTitle, { color: theme.foreground }]}>No business cards found</Text>
             <Text style={[styles.emptySubtitle, { color: theme.textSecondary }]}>
-              Please head to the BPAM Kontakts Web Dashboard to create and configure your professional business card.
+              Create your first professional digital business card right here to start sharing!
             </Text>
+            <TouchableOpacity 
+              style={[styles.createButton, { backgroundColor: theme.primary }]} 
+              onPress={() => router.push("/create-card" as any)}
+              activeOpacity={0.8}
+            >
+              <Ionicons name="add-circle" size={18} color="#ffffff" style={{ marginRight: 6 }} />
+              <Text style={[styles.createButtonText, { color: "#ffffff" }]}>
+                Create Digital Card
+              </Text>
+            </TouchableOpacity>
           </View>
         }
       />
@@ -349,5 +366,22 @@ const styles = StyleSheet.create({
     marginTop: 6,
     lineHeight: 18,
     maxWidth: 240,
+  },
+  createButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    height: 44,
+    borderRadius: 10,
+    paddingHorizontal: 16,
+    marginTop: 16,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  createButtonText: {
+    fontSize: 14,
+    fontWeight: "700",
   },
 });

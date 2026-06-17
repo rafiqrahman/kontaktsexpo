@@ -10,10 +10,9 @@ import {
   Modal,
   Platform
 } from "react-native";
-import { useRouter } from "expo-router";
+import { useRouter, useNavigation } from "expo-router";
 import QRCode from "react-native-qrcode-svg";
 import { Ionicons } from "@expo/vector-icons";
-import { useAuth } from "../../store/authContext";
 import { useApi, BASE_URL } from "../../hooks/useApi";
 import { useTheme } from "../../hooks/use-theme";
 import { useKontaktsTheme } from "../../store/themeContext";
@@ -62,30 +61,58 @@ export default function ShareScreen() {
   const [selectedCard, setSelectedCard] = useState<CardItem | null>(null);
   const [loading, setLoading] = useState(true);
   const [qrModalVisible, setQrModalVisible] = useState(false);
+  const [qrType, setQrType] = useState<"vcard" | "page">("vcard");
+  const navigation = useNavigation();
 
-  useEffect(() => {
-    fetchUserCards();
-  }, []);
-
-  const fetchUserCards = async () => {
-    setLoading(true);
+  const fetchUserCards = async (showLoading = true) => {
+    if (showLoading) setLoading(true);
     try {
       const data = await get("/api/v1/cards");
       if (data.success && data.cards && data.cards.length > 0) {
         setCards(data.cards);
-        setSelectedCard(data.cards[0]);
+        setSelectedCard((prev) => {
+          if (prev) {
+            const found = data.cards.find((c: any) => c.id === prev.id);
+            if (found) return found;
+          }
+          return data.cards[0];
+        });
+      } else {
+        setCards([]);
+        setSelectedCard(null);
       }
     } catch (e) {
       console.error("Failed to load cards for QR generation:", e);
     } finally {
-      setLoading(false);
+      if (showLoading) setLoading(false);
     }
   };
 
-  const getCardUrl = () => {
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    fetchUserCards();
+
+    const unsubscribe = navigation.addListener("focus", () => {
+      fetchUserCards(false);
+    });
+
+    return unsubscribe;
+  }, [navigation]);
+
+  const getQrValue = () => {
     if (!selectedCard) return "";
     const base = BASE_URL;
+    if (qrType === "vcard") {
+      return `${base}/api/v1/share/${selectedCard.id}/vcard`;
+    }
     return `${base}/c/${selectedCard.slug}`;
+  };
+
+  const getModalSubtitle = () => {
+    if (qrType === "vcard") {
+      return "Let others scan this code with their camera to download your contact card directly to their phone's address book.";
+    }
+    return "Let others scan this code with their camera to instantly view your dynamic profile and exchange details.";
   };
 
   if (loading) {
@@ -139,8 +166,18 @@ export default function ShareScreen() {
           <Ionicons name="card-outline" size={64} color={theme.textSecondary} />
           <Text style={[styles.emptyTitle, { color: theme.foreground }]}>No business cards found</Text>
           <Text style={[styles.emptySubtitle, { color: theme.textSecondary }]}>
-            Please log in to the BPAM Kontakts Web Dashboard on your computer to create your dynamic virtual business cards.
+            Create your first professional digital business card right here to start sharing!
           </Text>
+          <TouchableOpacity 
+            style={[styles.createButton, { backgroundColor: theme.primary }]} 
+            onPress={() => router.push("/create-card" as any)}
+            activeOpacity={0.8}
+          >
+            <Ionicons name="add-circle" size={18} color="#ffffff" style={{ marginRight: 6 }} />
+            <Text style={[styles.createButtonText, { color: "#ffffff" }]}>
+              Create Digital Card
+            </Text>
+          </TouchableOpacity>
         </View>
       ) : (
         /* Render Premium Layout Card Preview */
@@ -174,14 +211,19 @@ export default function ShareScreen() {
       {/* Floating Bottom Share QR Button */}
       {selectedCard ? (
         <View style={styles.bottomBar}>
-          <TouchableOpacity 
-            style={[styles.shareQrButton, { backgroundColor: theme.primary }]}
-            onPress={() => setQrModalVisible(true)}
-            activeOpacity={0.85}
-          >
-            <Ionicons name="qr-code" size={20} color={buttonTextColor} style={{ marginRight: 8 }} />
-            <Text style={[styles.shareQrText, { color: buttonTextColor }]}>Share My QR Code</Text>
-          </TouchableOpacity>
+          <View style={styles.dualButtonRow}>
+            <TouchableOpacity 
+              style={[styles.shareQrButton, { backgroundColor: theme.primary }]}
+              onPress={() => {
+                setQrType("vcard");
+                setQrModalVisible(true);
+              }}
+              activeOpacity={0.85}
+            >
+              <Ionicons name="qr-code" size={18} color={buttonTextColor} style={{ marginRight: 6 }} />
+              <Text style={[styles.shareQrText, { color: buttonTextColor }]}>Share QR</Text>
+            </TouchableOpacity>
+          </View>
         </View>
       ) : null}
 
@@ -207,13 +249,49 @@ export default function ShareScreen() {
               </View>
 
               <Text style={[styles.modalSubtitle, { color: theme.textSecondary }]}>
-                Let others scan this code with their camera to instantly view your dynamic profile and exchange details.
+                {getModalSubtitle()}
               </Text>
+
+              {/* Segmented Selector for QR Type */}
+              <View style={[styles.selectorContainer, { backgroundColor: theme.background, borderColor: theme.backgroundSelected, borderWidth: 1 }]}>
+                <TouchableOpacity
+                  style={[
+                    styles.selectorButton,
+                    qrType === "vcard" && { backgroundColor: theme.backgroundSelected }
+                  ]}
+                  onPress={() => setQrType("vcard")}
+                  activeOpacity={0.8}
+                >
+                  <Text style={[
+                    styles.selectorText,
+                    { color: theme.textSecondary },
+                    qrType === "vcard" && { color: theme.foreground, fontWeight: "800" }
+                  ]}>
+                    Direct Download
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[
+                    styles.selectorButton,
+                    qrType === "page" && { backgroundColor: theme.backgroundSelected }
+                  ]}
+                  onPress={() => setQrType("page")}
+                  activeOpacity={0.8}
+                >
+                  <Text style={[
+                    styles.selectorText,
+                    { color: theme.textSecondary },
+                    qrType === "page" && { color: theme.foreground, fontWeight: "800" }
+                  ]}>
+                    View Page
+                  </Text>
+                </TouchableOpacity>
+              </View>
 
               {/* Vector QR Code drawing inside frame */}
               <View style={[styles.qrFrame, { backgroundColor: "#ffffff", borderColor: theme.backgroundSelected }]}>
                 <QRCode
-                  value={getCardUrl()}
+                  value={getQrValue()}
                   size={width * 0.58}
                   color="#09090b"
                   backgroundColor="#ffffff"
@@ -227,7 +305,9 @@ export default function ShareScreen() {
 
               <View style={[styles.modalLinkBadge, { backgroundColor: theme.background, borderColor: theme.backgroundSelected }]}>
                 <Ionicons name="link" size={14} color={theme.textSecondary} style={{ marginRight: 6 }} />
-                <Text style={[styles.modalLinkText, { color: theme.foreground }]} numberOfLines={1}>c/{selectedCard.slug}</Text>
+                <Text style={[styles.modalLinkText, { color: theme.foreground }]} numberOfLines={1}>
+                  {qrType === "vcard" ? `api/v1/share/.../vcard` : `c/${selectedCard.slug}`}
+                </Text>
               </View>
 
             </View>
@@ -307,10 +387,10 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   shareQrButton: {
+    flex: 1,
     flexDirection: "row",
     height: 48,
     borderRadius: 24,
-    paddingHorizontal: 32,
     alignItems: "center",
     justifyContent: "center",
     shadowColor: "#000",
@@ -322,6 +402,13 @@ const styles = StyleSheet.create({
   shareQrText: {
     fontWeight: "800",
     fontSize: 14,
+  },
+  dualButtonRow: {
+    flexDirection: "row",
+    width: "100%",
+    justifyContent: "space-between",
+    alignItems: "center",
+    gap: 12,
   },
   emptyContainer: {
     flex: 1,
@@ -424,5 +511,39 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: "700",
     fontFamily: Platform.OS === "ios" ? "Courier" : "monospace",
+  },
+  selectorContainer: {
+    flexDirection: "row",
+    borderRadius: 12,
+    padding: 3,
+    marginBottom: 16,
+    width: "100%",
+  },
+  selectorButton: {
+    flex: 1,
+    paddingVertical: 8,
+    borderRadius: 9,
+    alignItems: "center",
+  },
+  selectorText: {
+    fontSize: 13,
+    fontWeight: "600",
+  },
+  createButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    height: 44,
+    borderRadius: 10,
+    paddingHorizontal: 16,
+    marginTop: 16,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  createButtonText: {
+    fontSize: 14,
+    fontWeight: "700",
   },
 });

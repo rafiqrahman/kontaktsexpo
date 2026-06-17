@@ -9,7 +9,7 @@ import {
   Alert,
   Platform
 } from "react-native";
-import { useLocalSearchParams, useRouter } from "expo-router";
+import { useLocalSearchParams, useRouter, useNavigation } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useApi } from "../../hooks/useApi";
 import CardPreviewNative from "../../components/CardPreviewNative";
@@ -18,6 +18,7 @@ export default function CardDetailScreen() {
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
   const { get } = useApi();
+  const navigation = useNavigation();
 
   const [card, setCard] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -25,10 +26,17 @@ export default function CardDetailScreen() {
   useEffect(() => {
     if (id) {
       fetchCard();
-    }
-  }, [id]);
 
-  const fetchCard = async () => {
+      const unsubscribe = navigation.addListener("focus", () => {
+        fetchCard(false);
+      });
+
+      return unsubscribe;
+    }
+  }, [id, navigation]);
+
+  const fetchCard = async (showLoading = true) => {
+    if (showLoading) setLoading(true);
     try {
       const data = await get(`/api/v1/cards/${id}`);
       if (data.success && data.card) {
@@ -39,7 +47,7 @@ export default function CardDetailScreen() {
       Alert.alert("Error", "Could not load business card preview.");
       router.back();
     } finally {
-      setLoading(false);
+      if (showLoading) setLoading(false);
     }
   };
 
@@ -62,7 +70,13 @@ export default function CardDetailScreen() {
           <Ionicons name="arrow-back" size={24} color="#09090b" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Card Preview</Text>
-        <View style={{ width: 40 }} />
+        <TouchableOpacity 
+          style={styles.editButton} 
+          onPress={() => router.push(`/edit-card/${id}` as any)}
+          activeOpacity={0.7}
+        >
+          <Ionicons name="create-outline" size={24} color="#09090b" />
+        </TouchableOpacity>
       </View>
 
       <ScrollView contentContainerStyle={styles.scrollContainer} showsVerticalScrollIndicator={false}>
@@ -124,6 +138,12 @@ const styles = StyleSheet.create({
     borderBottomColor: "#e4e4e7",
   },
   backButton: {
+    width: 40,
+    height: 40,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  editButton: {
     width: 40,
     height: 40,
     justifyContent: "center",

@@ -81,6 +81,7 @@ When the user requests a durable behavior change, record it here or in the relev
 ## Child DOX Index
 
 - [assets/](assets/) - Mobile assets
+- [plugins/](plugins/) - Custom Expo config plugins
 - [src/](src/) - Mobile source code
 - [scripts/](scripts/) - Utility scripts
 - [app.json](app.json) - Expo configuration
